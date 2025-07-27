@@ -7,5 +7,4 @@ void avoid_unused_warnings(void){
   (void)a;
   (void)b;
   (void)foo;
-  (void)bar;
 }
