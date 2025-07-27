@@ -23,14 +23,14 @@ Notably, explore following possibilities :
 
 ```
 gcc foo.c -c -g -Wall -Wextra -O0 -static -o foo.o
-gcc foo.c -c -g -Wall -Wextra -O0 -shared -o libfoo.so
+gcc dynamic.c -c -g -Wall -Wextra -O0 -shared -o libdynamic.so
 gcc main.c -g -Wall -Wextra -O0 -o main
 ```
 
 # [scan]() symbols
 
 ```
-nm --demangle --synthetic --line-numbers --with-symbol-versions --no-sort libfoo.so |
+nm --demangle --synthetic --line-numbers --with-symbol-versions --no-sort libdynamic.so |
     sed -E \
         -e "s/^[a-z0-9]+ //" \
         -e "s/^ +//" \
