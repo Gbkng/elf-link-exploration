@@ -22,7 +22,7 @@ Notably, explore following possibilities :
 # [build]() the examples
 
 ```
-gcc foo.c -c -g -Wall -Wextra -O0 -static -o foo.o
+gcc static.c -c -g -Wall -Wextra -O0 -static -o static.o
 gcc dynamic.c -c -g -Wall -Wextra -O0 -shared -o libdynamic.so
 gcc main.c -g -Wall -Wextra -O0 -o main
 ```
