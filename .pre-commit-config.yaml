@@ -1,0 +1,44 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0 # Use the ref you want to point at
+    hooks:
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.12.5
+    hooks:
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+        types_or: [ python, pyi, jupyter ]
+        exclude: |
+            (?x)^(
+                ci/studies/.*\.py
+            )$
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [ python, pyi, jupyter ]
+        exclude: |
+            (?x)^(
+                ci/studies/.*\.py
+            )$
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v20.1.8
+    hooks:
+        - id: clang-format
+          files: |
+              (?x)^(
+                  src/.*|
+                  examples/.*
+              )$
+  - repo: https://github.com/batmac/pre-commit-zig
+    rev: v0.3.0
+    hooks:
+      - id: zig-fmt
