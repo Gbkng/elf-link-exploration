@@ -29,7 +29,7 @@ gcc main.c -g -Wall -Wextra -O0 -o main
 # [scan]() symbols
 
 ```
-nm --demangle --synthetic --line-numbers --with-symbol-versions --no-sort foo.o | 
+nm --demangle --synthetic --line-numbers --with-symbol-versions --no-sort foo.o |
     sed -E \
         -e "s/^[a-z0-9]+ //" \
         -e "s/^ +//" \
@@ -56,6 +56,3 @@ nm --demangle --synthetic --line-numbers --with-symbol-versions --no-sort foo.o 
         -e "s/^p/p  stack unwind.......>/" \
 | sort
 ```
-
-
-
