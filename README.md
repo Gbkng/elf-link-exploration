@@ -24,17 +24,17 @@ Notably, explore following possibilities :
 
 Dependency graph and goals
 
+
 ```
 cat <<EOF
 main
-|
-|- libstatic-2.a
-|
-|- libdynamic.so
-   |
-   |-libstatic.a
+├- libstatic-2.a
+└- libdynamic.so
+   └-libstatic.a
 EOF
 ```
+- └ : <C-v>U2514<C-v>
+- ├ : <C-v>U251C<C-v>
 
 - The first goal is to have `libstatic.a` statically linked against
   `libdynamic.so` so that `libdynamic.so` is a static shared library.
@@ -103,12 +103,9 @@ Dependency graph and goals
 ```
 cat <<EOF
 main
-|
-|- libstatic-2.a
-|
-|- libdynamic.so
-   |
-   |-libstatic.so <- obtained from 'libstatic.a'
+├- libstatic-2.a
+└- libdynamic.so
+   └-libstatic.so ← obtained from 'libstatic.a'
 EOF
 ```
 
