@@ -28,9 +28,9 @@ Dependency graph and goals
 ```
 cat <<EOF
 main
-├- libstatic-2.a
-└- libdynamic.so
-   └-libstatic.a
+├─libstatic-2.a
+└─libdynamic.so
+  └─libstatic.a
 EOF
 ```
 - └ : <C-v>U2514<C-v>
@@ -108,9 +108,9 @@ Dependency graph and goals
 ```
 cat <<EOF
 main
-├- libstatic-2.a
-└- libdynamic.so
-   └-libstatic.so ← obtained from 'libstatic.a'
+├─libstatic-2.a
+└─libdynamic.so
+  └─libstatic.so ← obtained from 'libstatic.a'
 EOF
 ```
 
