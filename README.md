@@ -1,12 +1,13 @@
 # About
 
 An exploration of the possibilities to link ELF format in various ways.
-Notably, explore following possibilities :
+Notably, explore following questions :
 
-- How to embed a static library in a dynamic library ?
-- Is it possible to create a static library from a dynamic library ?
-- How to compile an executable with both static and dynamic libraries ?
-- What is the impact of various linkers ?
+- Is it possible to embed a static library into a dynamic library ? (Yes)
+- Is it possible to create a static library from a dynamic library ? (Not really)
+- Is it possible to create a static library from a dynamic library ? (Yes)
+- Is it possible to link an executable against both static and dynamic libraries ? (Yes)
+- What is the impact of various linkers ? (TODO)
 
 # Ref
 
@@ -33,8 +34,6 @@ main
   └─libstatic.a
 EOF
 ```
-- └ : <C-v>U2514<C-v>
-- ├ : <C-v>U251C<C-v>
 
 - The first goal is to have `libstatic.a` statically linked against
   `libdynamic.so` so that `libdynamic.so` is a static shared library.
@@ -44,6 +43,8 @@ EOF
   important to show that `libstatic.a` is not needed to link `main` against
   `libdynamic.so`, as `libdynamic.so` has been statically linked against
   `libstatic.a`
+
+Create build directory
 
 ```
 [ -d "build-1" ] && rm -r build-1
@@ -123,6 +124,8 @@ Here, dynamic library `libstatic.so` is built from static library
 This section contains less explanation that `build-1`, as most of the
 commands the same. Explanations mainly emphasize differences compared to
 `build-1`.
+
+Create build directory
 
 ```
 [ -d "build-2" ] && rm -r build-2
