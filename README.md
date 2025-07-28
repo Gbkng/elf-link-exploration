@@ -72,7 +72,6 @@ Build dynamic lib depending on the static archive
 gcc \
     src/dynamic.c \
     -shared \
-    -static-libgcc \
     -g \
     -fPIC \
     -Wall \
