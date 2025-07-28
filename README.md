@@ -19,7 +19,7 @@ Notably, explore following possibilities :
 - [3] https://stackoverflow.com/questions/65575673/is-it-possible-to-compile-a-c-program-with-both-static-and-dynamic-libraries
   On the `gcc` command to link against both static and dynamic libraries
 
-# [build]() the examples
+# [build-libs]() the examples
 
 ```
 gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
@@ -27,7 +27,18 @@ ar r libstatic.a static.o
 gcc src/dynamic.c -c -g -Wall -Wextra -O0 -shared -o libdynamic.so
 ```
 
+# [build-main]() a main
+
+```
 gcc src/main.c -g -Wall -Wextra -O0 -L ./ -ldynamic -lstatic -o main
+```
+
+# [clean]() remove build artifacts
+
+```
+rm *.o *.so main
+```
+
 # [scan]() symbols
 
 ```
