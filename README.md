@@ -45,16 +45,21 @@ EOF
   `libdynamic.so`, as `libdynamic.so` has been statically linked against
   `libstatic.a`
 
+```
+[ -d "build-1" ] && rm -r build-1
+mkdir build-1
+```
+
 Build static archives (ie. static libraries)
 
 ```
-gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
-ar r libstatic.a static.o 2>/dev/null
+gcc src/static.c -c -g -Wall -Wextra -O0 -static -o build-1/static.o
+ar r build-1/libstatic.a build-1/static.o 2>/dev/null
 ```
 
 ```
-gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o static-2.o
-ar r libstatic-2.a static-2.o 2>/dev/null
+gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o build-1/static-2.o
+ar r build-1/libstatic-2.a build-1/static-2.o 2>/dev/null
 ```
 
 `libstatic.a` is required by the dynamic library `libdynamic.so`, while the
@@ -72,8 +77,8 @@ gcc \
     -Wall \
     -Wextra \
     -O0 \
-    -o libdynamic.so \
-    -L. \
+    -o build-1/libdynamic.so \
+    -L./build-1 \
     -Wl,-Bstatic \
     -lstatic \
     -Wl,-Bdynamic
@@ -88,9 +93,9 @@ Build main
 
 ```
 gcc -g -Wall -Wextra -O0 \
-    -o main \
+    -o build-1/main \
     src/main.c \
-    -L ./ \
+    -L./build-1 \
     -Wl,-Bdynamic -ldynamic \
     -Wl,-Bstatic -lstatic-2 \
     -Wl,-Bdynamic
@@ -119,14 +124,19 @@ This section contains less explanation that `build-1`, as most of the
 commands the same. Explanations mainly emphasize differences compared to
 `build-1`.
 
+```
+[ -d "build-2" ] && rm -r build-2
+mkdir build-2
+```
+
 Build static archives (ie. static libraries)
 
 ```
-gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
-gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o static-2.o
+gcc src/static.c -c -g -Wall -Wextra -O0 -static -o build-2/static.o
+gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o build-2/static-2.o
 
-ar r libstatic.a static.o 2>/dev/null
-ar r libstatic-2.a static-2.o 2>/dev/null
+ar r build-2/libstatic.a build-2/static.o 2>/dev/null
+ar r build-2/libstatic-2.a build-2/static-2.o 2>/dev/null
 ```
 
 Transform static library into dynamic library:
@@ -136,7 +146,7 @@ directly from the static archive, **without any need for an intermediate binding
 file**.
 
 ```
-gcc -shared -fPIC -o libstatic.so -Wl,--whole-archive libstatic.a -Wl,--no-whole-archive
+gcc -shared -fPIC -o build-2/libstatic.so -Wl,--whole-archive build-2/libstatic.a -Wl,--no-whole-archive
 ```
 
 Build dynamic lib depending on the dynamic version of the initial static library
@@ -151,8 +161,8 @@ gcc \
     -Wall \
     -Wextra \
     -O0 \
-    -o libdynamic.so \
-    -L. \
+    -o build-2/libdynamic.so \
+    -L./build-2/ \
     -Wl,-Bdynamic \
     -lstatic \
     -Wl,-Bdynamic
@@ -162,9 +172,9 @@ Build main
 
 ```
 gcc -g -Wall -Wextra -O0 \
-    -o main \
+    -o build-2/main \
     src/main.c \
-    -L ./ \
+    -L./build-2/ \
     -Wl,-Bdynamic -ldynamic -lstatic \
     -Wl,-Bstatic -lstatic-2 \
     -Wl,-Bdynamic
@@ -172,16 +182,40 @@ gcc -g -Wall -Wextra -O0 \
 
 # [build-failure]()
 
+```
+[ -d "build-failure" ] && rm -r "build-failure"
+mkdir "build-failure"
+
+gcc src/static.c -c -g -Wall -Wextra -O0 -static -o build-failure/static.o
+gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o build-failure/static-2.o
+
+ar r build-failure/libstatic.a build-failure/static.o 2>/dev/null
+ar r build-failure/libstatic-2.a build-failure/static-2.o 2>/dev/null
+
+gcc src/dynamic.c \
+    -shared \
+    -static-libgcc \
+    -g \
+    -fPIC \
+    -Wall \
+    -Wextra \
+    -O0 \
+    -o build-failure/libdynamic.so \
+    -L./build-failure/ \
+    -Wl,-Bdynamic \
+    -lstatic \
+    -Wl,-Bdynamic
+```
 Extract symbols from a `.so` library:
 
 ```
-objcopy --extract-symbol libdynamic.so libdynamic-symbols.o
+objcopy --extract-symbol build-failure/libdynamic.so build-failure/libdynamic-symbols.o
 ```
 
 Build a static library from the extracted symbols:
 
 ```
-ar r libdynamic.a libdynamic-symbols.o
+ar r build-failure/libdynamic.a build-failure/libdynamic-symbols.o
 ```
 
 Note that those commands are here as a curiosity. It does not work in practice
@@ -192,43 +226,10 @@ Link with object file of extracted symbols of dynamic library, which **does not
 work** (probably because of missing linker directive inside object files):
 
 ```
-gcc src/main.c -c -g -Wall -Wextra -O0 -o main.o
-gcc -o main main.o static.o libdynamic-symbols.o
-```
-
-# [clean]() remove build artifacts
-
-```
-rm -f *.o *.so *.a main
-```
-
-# [scan]() symbols
-
-```
-nm --demangle --synthetic --line-numbers --with-symbol-versions --no-sort libdynamic.so |
-    sed -E \
-        -e "s/^[a-z0-9]+ //" \
-        -e "s/^ +//" \
-        -e "s/^R/R  global read-only...>/" \
-        -e "s/^r/r  local  read-only...>/" \
-        -e "s/^B/B  global .bss........>/" \
-        -e "s/^b/b  local  .bss........>/" \
-        -e "s/^D/D  global .data.......>/" \
-        -e "s/^d/d  local  .data.......>/" \
-        -e "s/^I/I  indirect ref.......>/" \
-        -e "s/^S/S  global small uninit>/" \
-        -e "s/^s/s  local  small uninit>/" \
-        -e "s/^T/T  global .text.......>/" \
-        -e "s/^t/t  local  .text.......>/" \
-        -e "s/^V/V  global weak........>/" \
-        -e "s/^v/v  local  weak........>/" \
-        -e "s/^W/W  global weak unspec.>/" \
-        -e "s/^w/w  local  weak unspec.>/" \
-        -e "s/^U/U  undefined..........>/" \
-        -e "s/^u/u  uniq global sym....>/" \
-        -e "s/^A/A  absolute sym.......>/" \
-        -e "s/^N/N  debug sym..........>/" \
-        -e "s/^n/n  misc read-only.....>/" \
-        -e "s/^p/p  stack unwind.......>/" \
-| sort
+gcc src/main.c -c -g -Wall -Wextra -O0 -o build-failure/main.o
+gcc -o build-failure/main \
+    build-failure/main.o \
+    build-failure/static.o \
+    build-failure/static-2.o \
+    build-failure/libdynamic-symbols.o
 ```
