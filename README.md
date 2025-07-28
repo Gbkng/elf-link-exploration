@@ -22,11 +22,12 @@ Notably, explore following possibilities :
 # [build]() the examples
 
 ```
-gcc static.c -c -g -Wall -Wextra -O0 -static -o static.o
-gcc dynamic.c -c -g -Wall -Wextra -O0 -shared -o libdynamic.so
-gcc main.c -g -Wall -Wextra -O0 -o main
+gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
+ar r libstatic.a static.o
+gcc src/dynamic.c -c -g -Wall -Wextra -O0 -shared -o libdynamic.so
 ```
 
+gcc src/main.c -g -Wall -Wextra -O0 -L ./ -ldynamic -lstatic -o main
 # [scan]() symbols
 
 ```
