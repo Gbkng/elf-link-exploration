@@ -291,3 +291,23 @@ gcc -o build-failure/main \
     build-failure/static-2.o \
     build-failure/libdynamic-symbols.o
 ```
+
+# [build-zig]() Build an executable using the Zig build system
+
+Use zig toolchain to build the executable
+
+```
+{
+    zig_tool="$(which "zig")" && [ -x "$zig_tool" ]
+} || {
+    echo "Fatal error: Zig not found on your system. Abort." >&2
+    exit 1
+}
+zig build -Dtarget=x86_64-linux-musl
+```
+
+Due to the `-Dtarget=x86_64-linux-musl` option, by switching `dyn` library
+`.linkage` property from `.dynamic` to `.static`, a fully static executable can
+be obtained. Thanks to `musl` properties, the resulting size of the executable
+is smaller than the size of the fully static executable obtained using `gcc`,
+in the `build-3` example above.
