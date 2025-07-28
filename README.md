@@ -19,24 +19,185 @@ Notably, explore following possibilities :
 - [3] https://stackoverflow.com/questions/65575673/is-it-possible-to-compile-a-c-program-with-both-static-and-dynamic-libraries
   On the `gcc` command to link against both static and dynamic libraries
 
-# [build-libs]() the examples
+
+# [build-1]()
+
+## Dependency graph and goals
+
+```
+main
+|
+|---------------|
+|               |
+libstatic-2.a   libdynamic.so
+                |
+                libstatic.a
+```
+
+- The first goal is to have `libstatic.a` statically linked against
+  `libdynamic.so` so that `libdynamic.so` is a static shared library.
+- The second goal is to have `main` which is both linked statically against
+  `libstatic-2.a` and dynamically linked against `libdynamic.so`, to demonstrate
+  that it is possible to combine static and dynamic linkage modes. It is also
+  important to show that `libstatic.a` is not needed to link `main` against
+  `libdynamic.so`, as `libdynamic.so` has been statically linked against
+  `libstatic.a`
+
+## Build static archives (ie. static libraries)
 
 ```
 gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
 ar r libstatic.a static.o
-gcc src/dynamic.c -c -g -Wall -Wextra -O0 -shared -o libdynamic.so
 ```
 
-# [build-main]() a main
+```
+gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o static-2.o
+ar r libstatic-2.a static-2.o
+```
+
+`libstatic.a` is required by the dynamic library `libdynamic.so`, while the
+second `libstatic-2.a` is required by `main`.
+
+## Build dynamic lib depending on the static archive
 
 ```
-gcc src/main.c -g -Wall -Wextra -O0 -L ./ -ldynamic -lstatic -o main
+gcc \
+    src/dynamic.c \
+    -shared \
+    -static-libgcc \
+    -g \
+    -fPIC \
+    -Wall \
+    -Wextra \
+    -O0 \
+    -o libdynamic.so \
+    -L. \
+    -Wl,-Bstatic \
+    -lstatic \
+    -Wl,-Bdynamic
+```
+
+Note the use of `-Wl,-Bstatic` to impose search of static libraries only.
+`-Wl,-Bdynamic` falls back to the "dynamic, else static (if dynamic not found)". If `-Wl,-Bstatic`
+is used, it is **mandatory that the last `-Wl,-B<some>` be `-Wl,-Bdynamic`.
+Otherwise, linkage with `libc` fails.
+
+## build main
+
+```
+gcc -g -Wall -Wextra -O0 \
+    -o main \
+    src/main.c \
+    -L ./ \
+    -Wl,-Bdynamic -ldynamic \
+    -Wl,-Bstatic -lstatic-2 \
+    -Wl,-Bdynamic
+```
+
+# [build-2]()
+
+## Dependency graph and goals
+
+```
+main
+|
+|---------------|
+|               |
+libstatic-2.a   libdynamic.so
+                |
+                libstatic.so
+```
+
+This is the same as `build-1`, but it demonstrates that it is possible and easy
+to build a shared library from a static library.
+
+Here, dynamic library `libstatic.so` is built from static library
+`libstatic.a`.
+
+This section contains less explanation that `build-1`, as most of the
+commands the same. Explanations mainly emphasize differences compared to
+`build-1`.
+
+## Build static archives (ie. static libraries)
+
+```
+gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
+gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o static-2.o
+ar r libstatic.a static.o
+ar r libstatic-2.a static-2.o
+```
+
+## Transform static library into dynamic library:
+
+The `-Wl,--whole-archive` option allows to create the dynamic library
+directly from the static archive, **without any need for an intermediate binding
+file**.
+
+```
+gcc -shared -fPIC -o libstatic.so -Wl,--whole-archive libstatic.a -Wl,--no-whole-archive
+```
+
+## Build dynamic lib depending on the dynamic version of the initial static library
+
+```
+gcc \
+    src/dynamic.c \
+    -shared \
+    -static-libgcc \
+    -g \
+    -fPIC \
+    -Wall \
+    -Wextra \
+    -O0 \
+    -o libdynamic.so \
+    -L. \
+    -Wl,-Bdynamic \
+    -lstatic \
+    -Wl,-Bdynamic
+```
+
+## build main
+
+```
+gcc -g -Wall -Wextra -O0 \
+    -o main \
+    src/main.c \
+    -L ./ \
+    -Wl,-Bdynamic -ldynamic \
+    -Wl,-Bstatic -lstatic-2 \
+    -Wl,-Bdynamic
+```
+
+# [build-failure]()
+
+Extract symbols from a `.so` library:
+
+```
+objcopy --extract-symbol libdynamic.so libdynamic-symbols.o
+```
+
+Build a static library from the extracted symbols:
+
+```
+ar r libdynamic.a libdynamic-symbols.o
+```
+
+Note that those commands are here as a curiosity. It does not work in practice
+due to missing linkage information in `libdynamic-symbols.o`, preventing from
+linking against the latter.
+
+Link with object file of extracted symbols of dynamic library, which **does not
+work** (probably because of missing linker directive inside object files):
+
+```
+gcc src/main.c -c -g -Wall -Wextra -O0 -o main.o
+gcc -o main main.o static.o libdynamic-symbols.o
 ```
 
 # [clean]() remove build artifacts
 
 ```
-rm *.o *.so main
+rm -f *.o *.so *.a main
 ```
 
 # [scan]() symbols
