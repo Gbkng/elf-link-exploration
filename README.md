@@ -8,6 +8,7 @@ Notably, explore following questions :
 - Is it possible to create a static library from a dynamic library ? (Yes)
 - Is it possible to link an executable against both static and dynamic libraries ? (Yes)
 - What is the impact of various linkers ? (TODO)
+- Bonus: building with `zig`
 
 # Ref
 
