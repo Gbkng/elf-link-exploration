@@ -22,16 +22,18 @@ Notably, explore following possibilities :
 
 # [build-1]()
 
-## Dependency graph and goals
+Dependency graph and goals
 
 ```
+cat <<EOF
 main
 |
-|---------------|
-|               |
-libstatic-2.a   libdynamic.so
-                |
-                libstatic.a
+|- libstatic-2.a
+|
+|- libdynamic.so
+   |
+   |-libstatic.a
+EOF
 ```
 
 - The first goal is to have `libstatic.a` statically linked against
@@ -43,22 +45,22 @@ libstatic-2.a   libdynamic.so
   `libdynamic.so`, as `libdynamic.so` has been statically linked against
   `libstatic.a`
 
-## Build static archives (ie. static libraries)
+Build static archives (ie. static libraries)
 
 ```
 gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
-ar r libstatic.a static.o
+ar r libstatic.a static.o 2>/dev/null
 ```
 
 ```
 gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o static-2.o
-ar r libstatic-2.a static-2.o
+ar r libstatic-2.a static-2.o 2>/dev/null
 ```
 
 `libstatic.a` is required by the dynamic library `libdynamic.so`, while the
 second `libstatic-2.a` is required by `main`.
 
-## Build dynamic lib depending on the static archive
+Build dynamic lib depending on the static archive
 
 ```
 gcc \
@@ -82,7 +84,7 @@ Note the use of `-Wl,-Bstatic` to impose search of static libraries only.
 is used, it is **mandatory that the last `-Wl,-B<some>` be `-Wl,-Bdynamic`.
 Otherwise, linkage with `libc` fails.
 
-## build main
+Build main
 
 ```
 gcc -g -Wall -Wextra -O0 \
@@ -96,16 +98,18 @@ gcc -g -Wall -Wextra -O0 \
 
 # [build-2]()
 
-## Dependency graph and goals
+Dependency graph and goals
 
 ```
+cat <<EOF
 main
 |
-|---------------|
-|               |
-libstatic-2.a   libdynamic.so
-                |
-                libstatic.so
+|- libstatic-2.a
+|
+|- libdynamic.so
+   |
+   |-libstatic.so <- obtained from 'libstatic.a'
+EOF
 ```
 
 This is the same as `build-1`, but it demonstrates that it is possible and easy
@@ -118,16 +122,17 @@ This section contains less explanation that `build-1`, as most of the
 commands the same. Explanations mainly emphasize differences compared to
 `build-1`.
 
-## Build static archives (ie. static libraries)
+Build static archives (ie. static libraries)
 
 ```
 gcc src/static.c -c -g -Wall -Wextra -O0 -static -o static.o
 gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o static-2.o
-ar r libstatic.a static.o
-ar r libstatic-2.a static-2.o
+
+ar r libstatic.a static.o 2>/dev/null
+ar r libstatic-2.a static-2.o 2>/dev/null
 ```
 
-## Transform static library into dynamic library:
+Transform static library into dynamic library:
 
 The `-Wl,--whole-archive` option allows to create the dynamic library
 directly from the static archive, **without any need for an intermediate binding
@@ -137,7 +142,7 @@ file**.
 gcc -shared -fPIC -o libstatic.so -Wl,--whole-archive libstatic.a -Wl,--no-whole-archive
 ```
 
-## Build dynamic lib depending on the dynamic version of the initial static library
+Build dynamic lib depending on the dynamic version of the initial static library
 
 ```
 gcc \
@@ -156,14 +161,14 @@ gcc \
     -Wl,-Bdynamic
 ```
 
-## build main
+Build main
 
 ```
 gcc -g -Wall -Wextra -O0 \
     -o main \
     src/main.c \
     -L ./ \
-    -Wl,-Bdynamic -ldynamic \
+    -Wl,-Bdynamic -ldynamic -lstatic \
     -Wl,-Bstatic -lstatic-2 \
     -Wl,-Bdynamic
 ```
