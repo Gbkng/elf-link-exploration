@@ -7,6 +7,7 @@ Notably, explore following questions :
 - Is it possible to create a static library from a dynamic library ? (Not really)
 - Is it possible to create a static library from a dynamic library ? (Yes)
 - Is it possible to link an executable against both static and dynamic libraries ? (Yes)
+- Is it possible to link an executable statically using gcc ? (Yes)
 - What is the impact of various linkers ? (TODO)
 - Bonus: building with `zig`
 
@@ -183,7 +184,65 @@ gcc -g -Wall -Wextra -O0 \
     -Wl,-Bdynamic
 ```
 
+# [build-3]() static executable
+
+Dependency graph and goals
+
+```
+cat <<EOF
+main
+├─libstatic-2.a
+└─libdynamic.a
+  └─libstatic.a
+EOF
+```
+
+This section demonstrates that it is possible to build a fully static
+executable with gcc.
+
+This section contains less explanation than `build-1`, as most of the
+commands are the same. Explanations mainly emphasize differences compared to
+`build-1`.
+
+Create build directory
+
+```
+[ -d "build-3" ] && rm -r build-3
+mkdir build-3
+```
+
+Build static archives (ie. static libraries)
+
+Even `dynamic.c` is built as a static library here, to allow full static
+linkage.
+
+```
+gcc src/static.c -c -g -Wall -Wextra -O0 -static -o build-3/static.o
+gcc src/static-2.c -c -g -Wall -Wextra -O0 -static -o build-3/static-2.o
+gcc src/dynamic.c -c -g -Wall -Wextra -O0 -static -o build-3/dynamic.o
+
+ar r build-3/libstatic.a build-3/static.o 2>/dev/null
+ar r build-3/libstatic-2.a build-3/static-2.o 2>/dev/null
+ar r build-3/libdynamic.a build-3/dynamic.o 2>/dev/null
+```
+
+Build main statically
+
+```
+gcc -g -Wall -Wextra -O0 \
+    -o build-3/main \
+    src/main.c \
+    -static -static-libgcc \
+    -L./build-3/ \
+    -Wl,-Bstatic -ldynamic -lstatic -lstatic-2
+```
+
 # [build-failure]()
+
+This section shows that it is not trivial to statically link a dynamic library
+by splitting its symbols into object files. It does not work due to missing
+linkage information in `libdynamic-symbols.o`, preventing from linking against
+the latter. Linking is a destructive process.
 
 ```
 [ -d "build-failure" ] && rm -r "build-failure"
@@ -220,10 +279,6 @@ Build a static library from the extracted symbols:
 ```
 ar r build-failure/libdynamic.a build-failure/libdynamic-symbols.o
 ```
-
-Note that those commands are here as a curiosity. It does not work in practice
-due to missing linkage information in `libdynamic-symbols.o`, preventing from
-linking against the latter.
 
 Link with object file of extracted symbols of dynamic library, which **does not
 work** (probably because of missing linker directive inside object files):
